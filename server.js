@@ -1,35 +1,20 @@
-const server = require("http").createServer();
-const io = require("socket.io")(server, {
+const http = require("http");
+const io = require("socket.io");
+
+const apiServer = require("./api");
+const httpServer = http.createServer(apiServer);
+const socketServer = io(httpServer, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
   },
 });
 
+const sockets = require("./sockets");
+
 const PORT = 3000;
 
-server.listen(PORT, () => {
-  console.log("Listening on port " + PORT);
-});
+httpServer.listen(PORT);
+console.log("Listening on port " + PORT);
 
-let readyPlayerCount = 0;
-
-io.on("connection", (socket) => {
-  console.log("Client connected as", socket.id);
-
-  socket.on("ready", () => {
-    console.log("Player is ready on", socket.id);
-    readyPlayerCount++;
-    if (readyPlayerCount === 2) {
-      io.emit("startGame", socket.id);
-    }
-  });
-
-  socket.on("paddleMove", (paddleData) => {
-    socket.broadcast.emit("paddleMove", paddleData);
-  });
-
-  socket.on("ballMove", (ballData) => {
-    socket.broadcast.emit("ballMove", ballData);
-  });
-});
+sockets.listen(socketServer);
